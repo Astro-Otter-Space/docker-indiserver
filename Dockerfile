@@ -69,7 +69,7 @@ RUN apt-get update && \
     libjpeg-dev libcurl4-gnutls-dev libtiff-dev libfftw3-dev libftdi-dev libgps-dev libraw-dev libdc1394-dev \
     libgphoto2-dev libboost-dev libboost-regex-dev librtlsdr-dev liblimesuite-dev libftdi1-dev libavcodec-dev \
     libavdevice-dev libzmq3-dev libudev-dev \
-    extra-cmake-modules \
+    extra-cmake-modules
 
 # Only for Raspberry PI
 RUN if echo "$INDI_DRIVERS" | grep -qw "indi_libcamera"; then \
@@ -79,7 +79,7 @@ RUN if echo "$INDI_DRIVERS" | grep -qw "indi_libcamera"; then \
 
 RUN if [ -n "$INDI_DRIVERS" ]; then \
       echo "===> Building extra drivers: $INDI_DRIVERS" && \
-      git clone --branch v${INDI_VERSION} --depth 1 https://github.com/indilib/indi-3rdparty.git && \
+      git clone --branch ${INDI_VERSION} --depth 1 https://github.com/indilib/indi-3rdparty.git && \
       cd indi-3rdparty && \
       git pull origin --no-rebase && \
       for drv in $INDI_DRIVERS; do \
@@ -100,16 +100,16 @@ FROM ubuntu:24.04 AS runtime
 
 ARG DEBIAN_FRONTEND=noninteractive
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
     python3 python3-pip python3-setuptools python3-wheel \
     libnova0 libcfitsio9 libusb-1.0-0 libjpeg8 libcurl4 libgsl27 libtiff5 && \
-    rm -rf /var/lib/apt/lists/*
+    rm -rf /var/lib/apt/lists/* \
 
 # Copier indi-core
 COPY --from=build-core /usr/local/bin/ /usr/local/bin/
 COPY --from=build-core /usr/local/lib/ /usr/local/lib/
 COPY --from=build-core /usr/local/share/indi/ /usr/local/share/indi/
-
 COPY --from=build-drivers /usr/local/bin/ /usr/local/bin/
 COPY --from=build-drivers /usr/local/lib/ /usr/local/lib/
 COPY --from=build-drivers /usr/local/share/indi/ /usr/local/share/indi/
