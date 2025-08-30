@@ -52,7 +52,8 @@ RUN set -e; \
         | sort -Vr \
         | head -n1); \
     fi && \
-    echo "Using INDI_VERSION=$INDI_VERSION"; \
+    echo "Using INDI_VERSION=$INDI_VERSION" && \
+    echo "$INDI_VERSION" > /tmp/indi_version.txt && \
     git clone --branch "$INDI_VERSION" --depth=1 https://github.com/indilib/indi.git /home/astro/Projects/indi
 
 # Compilation
@@ -92,6 +93,9 @@ WORKDIR /home/astro/Projects
 # Build extra drivers
 RUN if [ -n "$INDI_DRIVERS" ]; then \
       echo "===> Building extra drivers: $INDI_DRIVERS" && \
+      if [ -z "$INDI_VERSION" ] && [ -f "/tmp/indi_version.txt" ]; then \
+        INDI_VERSION=$(cat /tmp/indi_version.txt); \
+      fi && \
       echo "Using INDI_VERSION=$INDI_VERSION for 3rd parties"; \
       git clone --branch "$INDI_VERSION" --depth=1 https://github.com/indilib/indi-3rdparty.git /home/astro/Projects/indi-3rdparty && \
       for drv in $INDI_DRIVERS; do \
