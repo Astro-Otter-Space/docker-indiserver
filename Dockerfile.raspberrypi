@@ -1,15 +1,26 @@
 # ----------------------------
-# Stage 1 : Build INDI core & drivers
+# Stage 1 : Build INDI core and drivers
 # ----------------------------
-FROM debian:bookworm-slim AS build
+FROM dtcooper/raspberrypi-os:bookworm AS build
 ARG DEBIAN_FRONTEND=noninteractive
 ARG INDI_VERSION=""
 ARG INDI_DRIVERS=""
 LABEL maintainer="Astro Otter <balistik.fonfon@gmail.com>" \
-      description="INDI Server with drivers compiled" \
+      description="INDI Server with drivers compiled for Raspberry Pi" \
       version="1.0"
 
-# Dépendances build
+
+# Only for Raspberry PI
+RUN if echo "$INDI_DRIVERS" | grep -E "(indi.libcamera|libcamera)"; then \
+      echo "===> Installing libcamera packages for Raspberry Pi" && \
+      apt-get update && \
+      apt-get install -y --no-install-recommends \
+        libcamera-dev \
+        librpicam-app-dev \
+      && rm -rf /var/lib/apt/lists/*; \
+    fi
+
+# Dépendances build (core + drivers)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates build-essential cdbs cmake curl dkms git fxload jq pkg-config \
     libev-dev \
@@ -27,12 +38,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     librtlsdr-dev \
     libcfitsio-dev \
     libgphoto2-dev \
+    build-essential \
     libusb-1.0-0-dev \
     libdc1394-dev \
     libboost-regex-dev \
     libcurl4-gnutls-dev \
     libtheora-dev \
-    # Dépendances supplémentaires pour drivers tiers \
+    # Dépendances supplémentaires pour drivers tiers
     libboost-dev \
     liblimesuite-dev \
     libftdi1-dev \
@@ -40,7 +52,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libavdevice-dev \
     libzmq3-dev \
     libudev-dev \
-    extra-cmake-modules && \
+    extra-cmake-modules \
     update-ca-certificates && \
     rm -rf /var/lib/apt/lists/*
 
@@ -52,7 +64,7 @@ RUN useradd -ms /bin/bash astro && \
 # Run as user
 RUN mkdir -p /home/astro/Projects
 
-# Clone and build INDI core
+# Determine INDI_VERSION once
 RUN set -e; \
     if [ -z "$INDI_VERSION" ]; then \
       INDI_VERSION=$(git ls-remote --tags https://github.com/indilib/indi.git \
@@ -61,19 +73,23 @@ RUN set -e; \
         | sort -Vr \
         | head -n1); \
     fi && \
-    echo "===> Using INDI version $INDI_VERSION" && \
+    echo "Using INDI_VERSION=$INDI_VERSION" && \
+    echo "$INDI_VERSION" > /tmp/indi_version.txt
+
+# Clone and build INDI core
+RUN INDI_VERSION=$(cat /tmp/indi_version.txt) && \
+    echo "Building INDI core with version: $INDI_VERSION" && \
     git clone --branch "$INDI_VERSION" --depth=1 https://github.com/indilib/indi.git /home/astro/Projects/indi && \
     mkdir -p /home/astro/Projects/build/indi-core && cd /home/astro/Projects/build/indi-core && \
     cmake -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Debug /home/astro/Projects/indi && \
-    make -j$(nproc) && make install && \
-    # Build extra drivers with same INDI_VERSION \
-    if [ -n "$INDI_DRIVERS" ]; then \
+    make -j$(nproc) && make install
+
+# Build extra drivers
+RUN if [ -n "$INDI_DRIVERS" ]; then \
+      INDI_VERSION=$(cat /tmp/indi_version.txt) && \
       echo "===> Building extra drivers: $INDI_DRIVERS" && \
-      echo "==> Using INDI version $INDI_VERSION for 3rd parties" && \
+      echo "Using INDI_VERSION=$INDI_VERSION for 3rd parties" && \
       git clone --branch "$INDI_VERSION" --depth=1 https://github.com/indilib/indi-3rdparty.git /home/astro/Projects/indi-3rdparty && \
-      mkdir -p /home/astro/Projects/build/indi-3rdparty-libs && cd /home/astro/Projects/build/indi-3rdparty-libs && \
-      cmake -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Debug -DBUILD_LIBS=1 /home/astro/Projects/indi-3rdparty && \
-      make -j$(nproc) && make install; && \
       echo "$INDI_DRIVERS" | tr ' ' '\n' | while IFS= read -r drv; do \
         if [ -n "$drv" ]; then \
           echo "===> Building driver: $drv" && \
@@ -93,24 +109,35 @@ RUN set -e; \
       echo "===> No extra drivers requested"; \
     fi
 
-WORKDIR /home/astro/Projects
+WORKDIR /home/astro
 
 # ----------------------------
 # Stage 2 : Runtime image
 # ----------------------------
-FROM debian:bookworm-slim  AS runtime
+FROM dtcooper/raspberrypi-os:bookworm AS runtime
 ARG DEBIAN_FRONTEND=noninteractive
 
 # Install runtime dependencies
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-    python3 python3-pip python3-setuptools python3-wheel && \
+    python3 python3-pip python3-setuptools python3-wheel \
+    # Runtime libraries for libcamera if needed
+    libcamera0 \
+    librpicam0 && \
     rm -rf /var/lib/apt/lists/*
 
-## Copy from stages
+## Copy only INDI-related files from build stage
+# Copy INDI binaries
+RUN mkdir -p /usr/bin
 COPY --from=build /usr/bin/indi* /usr/bin/
-COPY --from=build /usr/lib/*indi* /usr/lib/
-COPY --from=build /usr/share/indi/*indi* /usr/share/indi/
+
+# Copy INDI libraries
+RUN mkdir -p /usr/lib
+COPY --from=build /usr/lib/libindi* /usr/lib/
+COPY --from=build /usr/lib/*/libindi* /usr/lib/
+
+# Copy INDI shared data
+COPY --from=build /usr/share/indi/ /usr/share/indi/
 
 # Install indiwebmanager
 RUN pip3 install --no-cache-dir --break-system-packages indiweb

@@ -1,17 +1,19 @@
-## WORK IN PROGRESS
-## DO NOT BUILD AND RUN YET 
+## WORK IN PROGRESS DO NOT BUILD AND RUN YET 
 
-
+## Get image from Docker hub
 
 WARNING: tags in indilib github repository are prefixed with letter "v"
-
-#### Build from Docker hub 
-Same commands but : 
+```bash
+docker pull astrootter/indiserver:latest
+```
+If you want a specific INDI version
 ```bash
 docker pull astrootter/indiserver:latest
 ```
 
-#### Run
+If `INDI_VERSION` is not setted, the last release will be compiled
+
+## Run image
 ```bash
 docker run -d -p 7624:7624 -p 8624:8624 --name indiserver -it astrootter/indiserver:latest
 ```
@@ -19,24 +21,15 @@ docker run -d -p 7624:7624 -p 8624:8624 --name indiserver -it astrootter/indiser
 Access to indiwebmanager on `http://<ip>:8624`
 
 
-#### Debug Build Dockerfile
-
-With last version of indi
+## Debug Build Dockerfile
 
 Build with Dockerfile:
 ```bash
-docker build --no-cache -t astrootter/indiserver:latest .
+docker build -f Dockerfile --no-cache -t astrootter/indiserver:latest .
+```
+Specific to raspbery PI :
+```bash
+docker build -f Dockerfile.raspberrypi --no-cache -t astrootter/indiserver:latest .
 ```
 
-With a specific version of INDI
-```bash
-docker build --no-cache --build-arg INDI_VERSION=v2.1.5 -t astrootter/indiserver:v2.1.5 .
-```
-With driver(s)
-```bash
-docker build \
-  --no-cache \
-  --build-arg INDI_VERSION=2.1.5 \
-  --build-arg "INDI_DRIVERS=indi-eqmod indi-asi" \
-  -t astrootter/indiserver:2.1.5 .
-```
+Like for `docker run` you can add arguments 
