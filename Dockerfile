@@ -73,7 +73,7 @@ RUN set -e; \
       git clone --branch "$INDI_VERSION" --depth=1 https://github.com/indilib/indi-3rdparty.git /home/astro/Projects/indi-3rdparty && \
       mkdir -p /home/astro/Projects/build/indi-3rdparty-libs && cd /home/astro/Projects/build/indi-3rdparty-libs && \
       cmake -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Debug -DBUILD_LIBS=1 /home/astro/Projects/indi-3rdparty && \
-      make -j$(nproc) && make install; && \
+      make -j$(nproc) && make install && \
       echo "$INDI_DRIVERS" | tr ' ' '\n' | while IFS= read -r drv; do \
         if [ -n "$drv" ]; then \
           echo "===> Building driver: $drv" && \
