@@ -17,9 +17,7 @@ If `INDI_VERSION` is not setted, the last release will be compiled
 ```bash
 docker run -d -p 7624:7624 -p 8624:8624 --name indiserver -it astrootter/indiserver:latest
 ```
-# -p 8624:8624
 Access to indiwebmanager on `http://<ip>:8624`
-
 
 ## Debug Build Dockerfile
 
