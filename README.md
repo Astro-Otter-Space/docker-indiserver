@@ -55,8 +55,11 @@ docker build -f Dockerfile.raspberrypi \
 ### Running the Container
 
 ```bash
-# Run INDI Web Manager (accessible at http://localhost:8624)
+# Run INDI Web Manager (option -d is for running in background)
 docker run -d -p 7624:7624 -p 8624:8624 --name indiserver-full -it astrootter/indiserver-full:latest
+
+# Run with USB device access for cameras/mounts
+docker run -d -p 7624:7624 -p 8624:8624 --privileged -v /dev:/dev astrootter/indiserver-full:latest
 ```
 
 ## Build Arguments (OBSOLETE)
