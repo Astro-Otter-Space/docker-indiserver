@@ -1,7 +1,7 @@
 # Docker INDI Server
 
 A Docker container for running INDI (Instrument Neutral Distributed Interface) server with libraries, drivers and Web-manager for astronomical equipment control.
-
+WARNING: work currently in progress
 ## Features
 
 - **INDI Core Library** with automatic version detection
@@ -94,10 +94,11 @@ Create a `docker-compose.yml` file:
 ```yaml
 version: '3.8'
 services:
-  indi-server:
+  indiserver-full:
     build:
       context: .
     ports:
+      - "7624:7624"
       - "8624:8624"
     privileged: true
     volumes:
@@ -107,7 +108,7 @@ services:
 
 Run with:
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 ## Troubleshooting
