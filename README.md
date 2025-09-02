@@ -33,13 +33,7 @@ git clone https://github.com/Astro-Otter-Space/docker-indiserver.git
 cd docker-indiserver
 
 # Build with default INDI version (latest stable)
-docker --no-cache -t astrootter/indiserver-full:latest .
-
-# Build with specific INDI version and drivers (OPTIONNAL REMOVED)
-#docker build \
-#  --build-arg INDI_VERSION=v2.0.8 \
-#  --build-arg INDI_DRIVERS="indi-asi indi-qhy indi-canon" \
-#  -t indi-server .
+docker build --no-cache -t astrootter/indiserver-full:latest .
 ```
 
 ### Raspberry Pi Build
@@ -47,9 +41,7 @@ docker --no-cache -t astrootter/indiserver-full:latest .
 WORK IN PROGRESS 
 ```bash
 # Build for Raspberry Pi with libcamera support
-docker build -f Dockerfile.raspberrypi \
-  --build-arg INDI_DRIVERS="indi-libcamera indi-asi" \
-  -t indi-server-rpi .
+docker build -f --no-cache  Dockerfile.raspberrypi -t astrootter/indiserver-rpi:latest .
 ```
 
 ### Running the Container
@@ -62,12 +54,19 @@ docker run -d -p 7624:7624 -p 8624:8624 --name indiserver-full -it astrootter/in
 docker run -d -p 7624:7624 -p 8624:8624 --privileged -v /dev:/dev astrootter/indiserver-full:latest
 ```
 
-## Build Arguments (OBSOLETE)
+#### Serial Devices
+For serial/RS232 devices:
 
-| Argument | Description | Default | Example |
-|----------|-------------|---------|---------|
-| `INDI_VERSION` | INDI version to build | Latest stable | `v2.0.8` |
-| `INDI_DRIVERS` | Space-separated list of drivers | None | `"indi-asi indi-qhy indi-canon"` |
+```bash
+docker run -p 7624:7624 -p 8624:8624 --privileged --device=/dev/ttyUSB0 astrootter/indiserver-full:latest
+```
+
+#### Raspberry Pi Camera
+For Raspberry Pi camera module:
+
+```bash
+docker run -p 7624:7624 -p 8624:8624 --privileged -v /dev:/dev -v /opt/vc:/opt/vc astrootter/indiserver-rpi
+```
 
 ## Available Drivers
 
