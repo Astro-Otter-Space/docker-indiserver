@@ -76,6 +76,6 @@ COPY --from=build /usr/share/indi /usr/share/indi
 # Install indiwebmanager
 RUN pip3 install --no-cache-dir --break-system-packages indiweb
 
-EXPOSE 8624
+EXPOSE 7624 8624
 ENTRYPOINT ["indi-web"]
 CMD ["--host", "0.0.0.0", "--port", "8624"]
